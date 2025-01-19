@@ -1,18 +1,20 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Add Swagger services
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add NSwag services
+builder.Services.AddOpenApiDocument(config =>
+{
+    config.Title = "Notes API";
+    config.Version = "v1";
+    
+    // Add example for ID and indicate it's a UUID
+    config.SchemaSettings.GenerateExamples = true;
+    config.SchemaSettings.SchemaProcessors.Add(new CustomSchemaProcessor());
+});
 
 // Configure SQLite database
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=notes.db"));
@@ -23,13 +25,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 
-    // Enable Swagger in development
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Notes API V1");
-        c.RoutePrefix = string.Empty; // Swagger at root
-    });
+    // Enable NSwag in development
+    app.UseOpenApi();
+    app.UseSwaggerUi();
 }
 
 app.UseHttpsRedirection();
@@ -47,6 +45,5 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
 }
-;
 
 app.Run();
