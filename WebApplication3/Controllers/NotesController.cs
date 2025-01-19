@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -21,7 +19,7 @@ public class NotesController : ControllerBase
     }
 
     // Get a note by id
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public ActionResult<Note> GetById(Guid id)
     {
         var note = _context.Notes.Find(id);
@@ -31,32 +29,35 @@ public class NotesController : ControllerBase
 
     // Create a new note
     [HttpPost]
-    public ActionResult<Note> Create(Note note)
+    public ActionResult<Note> Create(NoteRequestDto noteDto)
     {
-        note.Id = Guid.NewGuid(); // Ensure new UUID for created note
+        var note = new Note
+        {
+            Id = Guid.NewGuid(),
+            Title = noteDto.Title,
+            Content = noteDto.Content
+        };
         _context.Notes.Add(note);
         _context.SaveChanges();
         return CreatedAtAction(nameof(GetById), new { id = note.Id }, note);
     }
 
     // Update a note
-    [HttpPut("{id}")]
-    public IActionResult Update(Guid id, Note note)
+    [HttpPut("{id:guid}")]
+    public IActionResult Update(Guid id, NoteRequestDto noteDto)
     {
-        if (id != note.Id) return BadRequest();
-
         var existingNote = _context.Notes.Find(id);
         if (existingNote == null) return NotFound();
 
-        existingNote.Title = note.Title;
-        existingNote.Content = note.Content;
+        existingNote.Title = noteDto.Title;
+        existingNote.Content = noteDto.Content;
 
         _context.SaveChanges();
         return NoContent();
     }
 
     // Delete a note
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public IActionResult Delete(Guid id)
     {
         var note = _context.Notes.Find(id);
